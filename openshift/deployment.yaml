@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: nuxt-app
-          image: ghcr.io/<YOUR_GITHUB_USERNAME>/nuxt-app:latest
+          image: ghcr.io/ihebbb12345/nuxt-app:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
