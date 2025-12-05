@@ -1,4 +1,4 @@
-name: Build & Deploy Nuxt to OpenShift
+name: Build & Deploy Nuxt to OpenShift via GHCR
 
 on:
   push:
@@ -12,21 +12,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Log in to GHCR
+        run: echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/nuxt-app:latest
+          docker build -t $IMAGE -f docker/Dockerfile .
+
+      - name: Push Docker image to GHCR
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/nuxt-app:latest
+          docker push $IMAGE
+
       - name: Login to OpenShift
         run: |
           oc login ${{ secrets.OPENSHIFT_URL }} --token=${{ secrets.OPENSHIFT_TOKEN }} --insecure-skip-tls-verify
           oc project project-x
-          oc registry login
-
-      - name: Build Docker image
-        run: |
-          IMAGE=image-registry.openshift-image-registry.svc:5000/project-x/nuxt-app:latest
-          docker build -t $IMAGE -f docker/Dockerfile .
-
-      - name: Push image to OpenShift
-        run: |
-          IMAGE=image-registry.openshift-image-registry.svc:5000/project-x/nuxt-app:latest
-          docker push $IMAGE
 
       - name: Apply OpenShift manifests
         run: |
