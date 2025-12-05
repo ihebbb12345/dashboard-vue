@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: nuxt-app
-          image: image-registry.openshift-image-registry.svc:5000/project-x/nuxt-app:latest
+          image: ghcr.io/<YOUR_GITHUB_USERNAME>/nuxt-app:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
