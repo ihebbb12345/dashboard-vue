@@ -1,29 +1,36 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nuxt-app
-  namespace: project-x
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nuxt-app
-  template:
-    metadata:
-      labels:
-        app: nuxt-app
-    spec:
-      containers:
-        - name: nuxt-app
-          image: image-registry.openshift-image-registry.svc:5000/project-x/nuxt-app:latest
-          ports:
-            - containerPort: 8080
-          env:
-            - name: PORT
-              value: "8080"
-            - name: NITRO_PORT
-              value: "8080"
-          resources:
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+name: Build & Deploy Nuxt to OpenShift
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to OpenShift
+        run: |
+          oc login ${{ secrets.OPENSHIFT_URL }} --token=${{ secrets.OPENSHIFT_TOKEN }} --insecure-skip-tls-verify
+          oc project project-x
+          oc registry login
+
+      - name: Build Docker image
+        run: |
+          IMAGE=image-registry.openshift-image-registry.svc:5000/project-x/nuxt-app:latest
+          docker build -t $IMAGE -f docker/Dockerfile .
+
+      - name: Push image to OpenShift
+        run: |
+          IMAGE=image-registry.openshift-image-registry.svc:5000/project-x/nuxt-app:latest
+          docker push $IMAGE
+
+      - name: Apply OpenShift manifests
+        run: |
+          oc apply -f openshift/deployment.yaml
+          oc apply -f openshift/service.yaml
+          oc apply -f openshift/route.yaml
+          oc rollout restart deploy/nuxt-app
